@@ -297,3 +297,8 @@ html,body{overflow-x:clip}
 .bd-no-accounts [data-page="auth"],.bd-no-accounts [data-work="login"],.bd-no-accounts .bd-account .btn{display:none!important}
 .bdx-soon{margin-left:6px;padding:2px 7px;border-radius:999px;background:#FFF1EA;color:#9A3A10;font-size:11px;font-weight:700}
 .bdx-transcript-fallback{margin-top:12px;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid #E6E4F5;font-size:15px;line-height:1.7;white-space:pre-line;max-height:320px;overflow:auto}
+
+/* Keep buttons clear of the hosting badge that sits in the bottom-right corner */
+@media (min-width:700px){.exam-footer{padding-right:260px!important}}
+@media (max-width:699px){.exam-footer{padding-bottom:76px!important}}
+body::after{content:"";display:block;height:72px}
