@@ -302,3 +302,13 @@ html,body{overflow-x:clip}
 @media (min-width:700px){.exam-footer{padding-right:260px!important}}
 @media (max-width:699px){.exam-footer{padding-bottom:76px!important}}
 body::after{content:"";display:block;height:72px}
+
+/* Reset results */
+.bdx-reset{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:24px;padding:22px 26px;border:1px solid #F3D2C6;background:#FFF8F5}
+.bdx-reset h3{margin:0 0 4px;font-size:17px}
+.bdx-reset p{margin:0;color:#6B5A55;font-size:14px;line-height:1.5}
+.btn.bdx-reset-btn{background:#fff;color:#C2410C;border:1.5px solid #F0A98A;box-shadow:none;white-space:nowrap}
+.btn.bdx-reset-btn:hover{background:#C2410C;color:#fff;border-color:#C2410C}
+.btn.bdx-reset-btn[disabled]{opacity:.45;pointer-events:none}
+#modal .btn.bdx-reset-btn{background:#C2410C;color:#fff;border-color:#C2410C}
+@media (max-width:640px){.bdx-reset{flex-direction:column;align-items:flex-start}}

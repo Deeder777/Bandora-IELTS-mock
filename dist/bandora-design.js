@@ -282,7 +282,9 @@
     const html = originalProgress();
     const ov = B.overall(B.latestBands(saved.history));
     const card = `<article class="card bdx-progress-band"><span>${icon('target')}</span><small>Estimated overall band</small><strong>${ov ? B.fmtBand(ov.band) : '—'}</strong>${ov ? `<em>${ov.count}/4 sections</em>` : ''}</article>`;
-    return html.replace('<div class="progress-stats">', '<div class="progress-stats bdx-progress-stats">' + card);
+    const n = saved.history.length;
+    const reset = `<section class="card bdx-reset"><div><h3>Reset results</h3><p>${n ? `Delete ${n === 1 ? 'your saved session' : `all ${n} saved sessions`}, band estimates and mistake notebook entries on this device. Your target band stays the same.` : 'You have no saved results yet.'}</p></div><button type="button" class="btn bdx-reset-btn" data-bdx="reset-ask" ${n ? '' : 'disabled'}>Reset results</button></section>`;
+    return html.replace('<div class="progress-stats">', '<div class="progress-stats bdx-progress-stats">' + card) + reset;
   };
 
   // ======================= EXAM: time bar + word-count bar =======================
@@ -319,6 +321,21 @@
     const b = e.target.closest('[data-bdx]');
     if (!b) return;
     const kind = b.dataset.bdx;
+    if (kind === 'reset-ask') {
+      const n = saved.history.length;
+      modal('Reset all results?', `<p>This permanently deletes <b>${n} saved session${n === 1 ? '' : 's'}</b>, your band estimates and your mistake notebook on this device. It cannot be undone.</p><p class="small muted">Tip: use “Save results” on a result page first if you want a copy.</p>`, `${button('Keep my results', 'close', 'secondary')}<button type="button" class="btn bdx-reset-btn" data-bdx="reset-confirm">Yes, reset everything</button>`);
+      return;
+    }
+    if (kind === 'reset-confirm') {
+      saved.history = [];
+      if (!active) saved.active = null;
+      persist();
+      closeModal();
+      if (typeof resultId !== 'undefined') resultId = null;
+      render();
+      toast('All results have been reset. Fresh start!');
+      return;
+    }
     if (kind === 'step') { pathStep = (pathStep + Number(b.dataset.dir) + 4) % 4; rerenderPath(); }
     else if (kind === 'go-step') { pathStep = Number(b.dataset.step); rerenderPath(); }
     else if (kind === 'general') { toast('General Training tickets are coming soon. All current tickets are Academic.'); }
