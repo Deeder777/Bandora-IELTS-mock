@@ -6,3 +6,6 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "same-origin"
+
+[functions]
+  directory = "netlify/functions"

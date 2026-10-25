@@ -13,6 +13,16 @@ const server = http.createServer(async (request, response) => {
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Referrer-Policy', 'same-origin');
+  // Local preview of the AI function (needs ANTHROPIC_API_KEY in your terminal environment).
+  if (request.url.split('?')[0] === '/api/assess') {
+    try {
+      const chunks = []; for await (const c of request) chunks.push(c);
+      const { default: assess } = await import('./netlify/functions/assess.mjs');
+      const res = await assess(new Request('http://127.0.0.1/api/assess', { method: request.method, headers: { 'content-type': 'application/json', 'x-nf-client-connection-ip': '127.0.0.1' }, body: request.method === 'POST' ? Buffer.concat(chunks) : undefined }));
+      response.writeHead(res.status, { 'Content-Type': 'application/json' }); response.end(await res.text());
+    } catch { response.writeHead(500); response.end('{"error":"local"}'); }
+    return;
+  }
   if (!['GET', 'HEAD'].includes(request.method)) {
     response.writeHead(405, { Allow: 'GET, HEAD' }); response.end('Method not allowed'); return;
   }

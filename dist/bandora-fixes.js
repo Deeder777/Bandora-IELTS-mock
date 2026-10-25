@@ -33,10 +33,29 @@
     return out;
   }
 
+  // Prefer the most natural voices the device offers (Edge "Natural"/"Online", Google, Apple "Enhanced"/"Premium"),
+  // British first, then other English accents. Female/male voices are alternated so speakers sound different.
+  const FEMALE = /(female|woman|sonia|libby|maisie|abbie|bella|hollie|olivia|serena|kate|stephanie|susan|hazel|martha|emma|amy|jenny|aria|ava|samantha|karen|moira|tessa|fiona|natasha|zira|google uk english female)/i;
+  const MALE = /(male|man\b|ryan|thomas|alfie|elliot|ethan|noah|oliver|george|daniel|arthur|guy|davis|tony|brian|christopher|eric|james|william|liam|aaron|google uk english male)/i;
+  function voiceScore(x) {
+    let s = 0;
+    if (/natural|neural|online|premium|enhanced/i.test(x.name)) s += 50;
+    if (/google/i.test(x.name)) s += 30;
+    if (/microsoft/i.test(x.name) && !/natural|online/i.test(x.name)) s -= 5;
+    if (/espeak|robot|compact|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar/i.test(x.name)) s -= 100;
+    if (x.lang === 'en-GB') s += 20; else if (/^en-(AU|IE|NZ)/i.test(x.lang)) s += 10; else if (/^en-US/i.test(x.lang)) s += 6;
+    if (x.localService === false) s += 4;
+    return s;
+  }
   function englishVoices() {
-    const v = speechSynthesis.getVoices();
-    const gb = v.filter((x) => x.lang === 'en-GB'), en = v.filter((x) => /^en/i.test(x.lang) && x.lang !== 'en-GB');
-    return gb.concat(en);
+    const all = speechSynthesis.getVoices().filter((x) => /^en[-_]/i.test(x.lang) || x.lang === 'en');
+    const ranked = all.map((x) => ({ x, s: voiceScore(x) })).filter((o) => o.s > -50).sort((a, b) => b.s - a.s).map((o) => o.x);
+    const f = ranked.filter((x) => FEMALE.test(x.name)), m = ranked.filter((x) => MALE.test(x.name) && !FEMALE.test(x.name));
+    const rest = ranked.filter((x) => !f.includes(x) && !m.includes(x));
+    // interleave best female / best male, then the rest
+    const out = [];
+    for (let i = 0; i < Math.max(f.length, m.length); i++) { if (f[i]) out.push(f[i]); if (m[i]) out.push(m[i]); }
+    return out.concat(rest).length ? out.concat(rest) : all;
   }
   function withVoices(cb) {
     if (speechSynthesis.getVoices().length) { cb(); return; }
