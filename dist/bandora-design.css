@@ -284,6 +284,8 @@ html,body{overflow-x:clip}
 .question-panel .word-count{position:sticky;bottom:84px;z-index:2;background:#fff;padding:10px 0 4px}
 /* listening progress */
 .bdx-audio-progress{display:block;height:6px;border-radius:99px;background:#ECECF5;overflow:hidden;margin-top:10px}
+.bdx-audio-progress.seekable{height:10px;cursor:pointer}
+.bdx-audio-progress.seekable:hover{background:#DEDBF5}
 .bdx-audio-progress i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#5B47F5,#B23BD6);transition:width .4s}
 
 .bd-no-accounts [data-page="auth"],.bd-no-accounts [data-work="login"],.bd-no-accounts .bd-account .btn{display:none!important}
