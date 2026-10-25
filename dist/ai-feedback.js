@@ -99,6 +99,8 @@
   const MESSAGES = {
     not_configured: 'AI checking is not switched on for this site yet. (The site owner needs to add an API key in Netlify.)',
     rate_limited: 'You have used AI checking a lot this hour. Please try again later.',
+    provider_busy: 'The free AI checker is busy or has reached its limit for now. Please try again in a few minutes.',
+    no_report: 'The AI reply could not be read. Please press the button again.',
     too_short: 'Your answer is too short to assess.',
     upstream: 'The AI service is busy right now. Please try again in a minute.',
     network: 'Could not reach the AI service. Please try again.'

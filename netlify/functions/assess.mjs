@@ -1,9 +1,11 @@
 // Bandora · AI examiner feedback (Netlify Function)
 // POST /api/assess  { type: 'writing' | 'speaking', tasks | parts }
-// The Anthropic API key lives ONLY in Netlify environment variables (ANTHROPIC_API_KEY).
-// Optional: ANTHROPIC_MODEL (default claude-sonnet-5-5), BANDORA_HOURLY_LIMIT (default 12 per visitor).
+// Keys live ONLY in Netlify environment variables. The first one that is set is used:
+//   GROQ_API_KEY      – free tier (default model openai/gpt-oss-120b, override with GROQ_MODEL)
+//   GEMINI_API_KEY    – free tier (default model gemini-3.5-flash-lite, override with GEMINI_MODEL)
+//   ANTHROPIC_API_KEY – paid (default model claude-sonnet-5-5, override with ANTHROPIC_MODEL)
+// Optional: BANDORA_HOURLY_LIMIT (default 12 checks per visitor per hour).
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const LIMIT = Number(process.env.BANDORA_HOURLY_LIMIT || 12);
 const hits = new Map(); // best-effort, per warm instance
 
@@ -58,10 +60,78 @@ ${clip(p.transcript, 6000)}
 """`).join('\n\n')}`;
 }
 
+function provider() {
+  if (process.env.GROQ_API_KEY) return { name: 'groq', key: process.env.GROQ_API_KEY, model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b' };
+  if (process.env.GEMINI_API_KEY) return { name: 'gemini', key: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite' };
+  if (process.env.ANTHROPIC_API_KEY) return { name: 'anthropic', key: process.env.ANTHROPIC_API_KEY, model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5' };
+  return null;
+}
+
+// JSON instructions for providers without tool calling.
+const SHAPE = (keys) => `{"bands":{${keys.map((k) => `"${k}":<integer 0-9>`).join(',')}},"comments":{${keys.map((k) => `"${k}":"<1-2 sentences>"`).join(',')}},"strengths":["<up to 3>"],"corrections":[{"original":"<exact text from the answer>","improved":"<corrected version>","reason":"<short>"}],"vocabulary":[{"instead_of":"<word used>","try":"<better word or phrase>"}],"next_step":"<one sentence>"}`;
+const JSON_RULES = (type) => type === 'writing'
+  ? `\n\nReply with ONLY a JSON object, no other text, in this exact shape: {"tasks":[{"task":<1 or 2>,${SHAPE(['c1', 'c2', 'c3', 'c4']).slice(1)}]} – one item per task above. At most 6 corrections and 5 vocabulary items per task.`
+  : `\n\nReply with ONLY a JSON object, no other text, in this exact shape: ${SHAPE(['c1', 'c2', 'c3'])}. At most 6 corrections and 5 vocabulary items.`;
+
+const int = (v) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(0, Math.min(9, n)) : null; };
+const str = (v, n = 400) => (typeof v === 'string' ? v.slice(0, n) : '');
+function cleanOne(r, keys) {
+  if (!r || typeof r !== 'object' || !r.bands) return null;
+  const bands = {}, comments = {};
+  for (const k of keys) { bands[k] = int(r.bands[k]); comments[k] = str(r.comments && r.comments[k]); if (bands[k] == null) return null; }
+  return {
+    bands, comments,
+    strengths: (Array.isArray(r.strengths) ? r.strengths : []).map((x) => str(x, 200)).filter(Boolean).slice(0, 3),
+    corrections: (Array.isArray(r.corrections) ? r.corrections : []).filter((c) => c && c.original && c.improved).map((c) => ({ original: str(c.original, 300), improved: str(c.improved, 300), reason: str(c.reason, 200) })).slice(0, 6),
+    vocabulary: (Array.isArray(r.vocabulary) ? r.vocabulary : []).filter((v) => v && v.instead_of && v.try).map((v) => ({ instead_of: str(v.instead_of, 80), try: str(v.try, 120) })).slice(0, 5),
+    next_step: str(r.next_step, 300)
+  };
+}
+function clean(type, r) {
+  if (type === 'speaking') return cleanOne(r, ['c1', 'c2', 'c3']);
+  const tasks = (r && Array.isArray(r.tasks) ? r.tasks : []).map((t) => { const c = cleanOne(t, ['c1', 'c2', 'c3', 'c4']); return c && (t.task === 1 || t.task === 2 || t.task === '1' || t.task === '2') ? Object.assign({ task: Number(t.task) }, c) : null; }).filter(Boolean);
+  return tasks.length ? { tasks } : null;
+}
+function parseJSON(text) {
+  const t = String(text || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '');
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  try { return JSON.parse(a >= 0 ? t.slice(a, b + 1) : t); } catch { return null; }
+}
+
+async function callProvider(p, type, user, tool) {
+  if (p.name === 'groq') {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + p.key },
+      body: JSON.stringify({ model: p.model, temperature: 0.2, max_completion_tokens: 4000, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: user + JSON_RULES(type) }] })
+    });
+    if (!r.ok) return { status: r.status, text: await r.text() };
+    const d = await r.json();
+    return { report: parseJSON(d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) };
+  }
+  if (p.name === 'gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': p.key },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents: [{ role: 'user', parts: [{ text: user + JSON_RULES(type) }] }], generationConfig: { temperature: 0.2, responseMimeType: 'application/json', maxOutputTokens: 4000 } })
+    });
+    if (!r.ok) return { status: r.status, text: await r.text() };
+    const d = await r.json();
+    const parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts || [];
+    return { report: parseJSON(parts.map((x) => x.text || '').join('')) };
+  }
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': p.key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: p.model, max_tokens: 2500, system: SYSTEM, tools: [tool], tool_choice: { type: 'tool', name: 'report' }, messages: [{ role: 'user', content: user }] })
+  });
+  if (!r.ok) return { status: r.status, text: await r.text() };
+  const d = await r.json();
+  const out = (d.content || []).find((c) => c.type === 'tool_use');
+  return { report: out && out.input };
+}
+
 export default async (req) => {
   if (req.method !== 'POST') return json(405, { error: 'method' });
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return json(503, { error: 'not_configured' });
+  const prov = provider();
+  if (!prov) return json(503, { error: 'not_configured' });
 
   const ip = req.headers.get('x-nf-client-connection-ip') || req.headers.get('x-forwarded-for') || 'anon';
   const now = Date.now(), list = (hits.get(ip) || []).filter((t) => now - t < 3600e3);
@@ -75,7 +145,7 @@ export default async (req) => {
   if (type === 'writing') {
     const tasks = (Array.isArray(body.tasks) ? body.tasks : []).filter((t) => t && (t.id === 1 || t.id === 2) && words(t.response) >= 20).slice(0, 2);
     if (!tasks.length) return json(400, { error: 'too_short' });
-    user = writingPrompt(tasks) + '\n\nAssess each task separately with the report tool. Criteria: c1 = Task Achievement (Task 1) or Task Response (Task 2), c2 = Coherence and Cohesion, c3 = Lexical Resource, c4 = Grammatical Range and Accuracy.';
+    user = writingPrompt(tasks) + '\n\nAssess each task separately. Criteria: c1 = Task Achievement (Task 1) or Task Response (Task 2), c2 = Coherence and Cohesion, c3 = Lexical Resource, c4 = Grammatical Range and Accuracy.';
     const item = feedbackShape(['c1', 'c2', 'c3', 'c4']);
     item.properties.task = { type: 'integer', enum: [1, 2] }; item.required.unshift('task');
     tool = { name: 'report', description: 'Return the examiner report.', input_schema: { type: 'object', properties: { tasks: { type: 'array', items: item, minItems: 1, maxItems: 2 } }, required: ['tasks'] } };
@@ -83,21 +153,16 @@ export default async (req) => {
     const parts = (Array.isArray(body.parts) ? body.parts : []).filter((p) => p && words(p.transcript) >= 10).slice(0, 3);
     const total = parts.reduce((a, p) => a + words(p.transcript), 0);
     if (total < 60) return json(400, { error: 'too_short' });
-    user = speakingPrompt(parts) + '\n\nAssess the whole speaking test with the report tool. Criteria: c1 = Fluency and Coherence, c2 = Lexical Resource, c3 = Grammatical Range and Accuracy.';
+    user = speakingPrompt(parts) + '\n\nAssess the whole speaking test. Criteria: c1 = Fluency and Coherence, c2 = Lexical Resource, c3 = Grammatical Range and Accuracy.';
     tool = { name: 'report', description: 'Return the examiner report.', input_schema: feedbackShape(['c1', 'c2', 'c3']) };
   } else return json(400, { error: 'bad_type' });
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: SYSTEM, tools: [tool], tool_choice: { type: 'tool', name: 'report' }, messages: [{ role: 'user', content: user }] })
-    });
-    if (!r.ok) { const t = await r.text(); console.error('anthropic', r.status, t.slice(0, 300)); return json(502, { error: 'upstream', status: r.status }); }
-    const data = await r.json();
-    const out = (data.content || []).find((c) => c.type === 'tool_use');
-    if (!out) return json(502, { error: 'no_report' });
-    return json(200, { type, model: MODEL, report: out.input });
+    const out = await callProvider(prov, type, user, tool);
+    if (out.status) { console.error(prov.name, out.status, String(out.text).slice(0, 300)); return json(out.status === 429 ? 429 : 502, { error: out.status === 429 ? 'provider_busy' : 'upstream', status: out.status }); }
+    const report = clean(type, out.report);
+    if (!report) return json(502, { error: 'no_report' });
+    return json(200, { type, model: prov.model, provider: prov.name, report });
   } catch (e) {
     console.error(e);
     return json(502, { error: 'network' });

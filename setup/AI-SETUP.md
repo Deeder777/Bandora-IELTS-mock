@@ -1,34 +1,29 @@
-# Turning on AI examiner feedback
+# Turning on AI examiner feedback (free)
 
 Bandora's Writing and Speaking result pages have a **Check with AI** button. It calls a small
-Netlify Function (`netlify/functions/assess.mjs`) that sends the answer to the Claude API and
-returns criterion bands, corrections and vocabulary tips.
+Netlify Function (`netlify/functions/assess.mjs`). The key is stored **only in Netlify's
+environment variables** — never in the website files, so visitors cannot see it.
 
-The API key is stored **only in Netlify's environment variables**. It is never in the website
-files, so visitors cannot see it.
+## Free option: Groq (recommended)
+1. Go to https://console.groq.com and sign up (Google account is fine).
+2. Open **API Keys → Create API Key**, name it `bandora`, copy it.
+3. Netlify → **bandora-ielts → Site configuration → Environment variables → Add a variable**
+   - Key: `GROQ_API_KEY`  Value: your key  → Save.
+4. **Deploys → Trigger deploy → Deploy site.**
 
-## 1. Create an API key
-1. Go to https://console.anthropic.com and sign in.
-2. Add a little credit under **Billing** (each check costs roughly 1–3 US cents).
-3. Open **API Keys → Create Key**, name it `bandora`, and copy it.
+The free plan has daily request limits. If many students check at once the button shows
+"busy, try again in a few minutes".
 
-## 2. Add it to Netlify
-1. Netlify → your site (**bandora-ielts**) → **Site configuration → Environment variables**.
-2. **Add a variable**: Key `ANTHROPIC_API_KEY`, Value = your key. Scope: Functions.
-3. Optional:
-   - `ANTHROPIC_MODEL` – default `claude-sonnet-5-5`. Use `claude-haiku-5-5` for cheaper, simpler feedback.
-   - `BANDORA_HOURLY_LIMIT` – checks per visitor per hour (default 12).
+## Other options
+- `GEMINI_API_KEY` – Google AI Studio free tier (https://aistudio.google.com/apikey). Small daily limits;
+  Google may use free-tier prompts to improve its products, and its terms say the API must not be used
+  by services for people under 18.
+- `ANTHROPIC_API_KEY` – paid Claude API, best feedback quality.
 
-## 3. Deploy from GitHub
-Functions only run when Netlify builds the site from the GitHub repository
-(**Site configuration → Build & deploy → Link repository**, publish directory `dist`).
-Drag-and-drop deploys of the `dist` folder do **not** include functions.
+If several keys are set, Groq is used first, then Gemini, then Anthropic.
+Optional overrides: `GROQ_MODEL` (default `openai/gpt-oss-120b`), `GEMINI_MODEL`, `ANTHROPIC_MODEL`,
+`BANDORA_HOURLY_LIMIT` (checks per visitor per hour, default 12).
 
-After the next deploy, open a Writing result and press **Check my writing with AI**.
-
-## Cost control
-- Set a monthly spend limit in the Anthropic console (**Billing → Limits**).
-- The function refuses very short answers and limits each visitor per hour.
-
-## Local preview
-`ANTHROPIC_API_KEY=your-key node server.mjs` – the local server also answers `/api/assess`.
+## Notes
+- Functions only run when Netlify builds from the GitHub repo (already set up).
+- Local preview: `GROQ_API_KEY=your-key node server.mjs`.
