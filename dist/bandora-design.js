@@ -213,7 +213,7 @@
   function typeBreakdown(h) {
     const rows = {};
     for (const q of questionsFor(h.type, h)) {
-      const k = q.type === 'tfng' ? 'True / False / Not given' : q.options ? 'Multiple choice' : 'Short answers';
+      const k = window.IELTSFormats ? IELTSFormats.typeLabel(q) : q.type === 'tfng' ? 'True / False / Not given' : q.options ? 'Multiple choice' : 'Short answers';
       rows[k] = rows[k] || { ok: 0, n: 0 };
       rows[k].n++; if (isCorrect(q, h.answers[q.id])) rows[k].ok++;
     }
