@@ -1,0 +1,73 @@
+/* Bandora motion layer — entrance, scroll-reveal, count-up and hover animations
+   matching the Bandora design prototype. Loaded last; safe to remove.
+   Everything is disabled automatically by the existing prefers-reduced-motion rules. */
+
+@property --ticket-progress { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+
+@keyframes mo-rise { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: none; } }
+@keyframes mo-scale { from { opacity: 0; transform: scale(.94) translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes mo-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mo-drop { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes mo-ring { from { --ticket-progress: 0%; } }
+@keyframes mo-grow { from { transform: scaleX(0); } }
+@keyframes mo-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@keyframes mo-shift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+@keyframes mo-drift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(2%, -3%, 0) scale(1.06); } }
+@keyframes mo-mask { from { clip-path: inset(0 0 100% 0); transform: translateY(24px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+@keyframes mo-pop { 0% { transform: scale(1); } 40% { transform: scale(1.04); } 100% { transform: scale(1); } }
+@keyframes mo-modal { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes mo-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mo-toast { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+
+  /* ---- header ---- */
+  .mo-ready .bd-header.mo-first { animation: mo-drop .6s cubic-bezier(.2,.7,.2,1) both; }
+  .mo-progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #5B47F5, #B23BD6, #F0703A); pointer-events: none; z-index: 2; }
+
+  /* ---- entrance (on page change) ---- */
+  .mo-ready .mo-enter { animation: mo-rise .8s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--mo-i, 0) * 70ms); }
+  .mo-ready .mo-enter-scale { animation: mo-scale 1s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--mo-i, 0) * 70ms + 150ms); }
+
+  /* ---- scroll reveal ---- */
+  .mo-ready .mo-reveal:not(.mo-in) { opacity: 0; transform: translateY(36px); }
+  .mo-ready .mo-reveal.mo-in { animation: mo-rise .8s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--mo-i, 0) * 80ms); }
+  .mo-ready h2.mo-mask:not(.mo-in) { clip-path: inset(0 0 100% 0); }
+  .mo-ready h2.mo-mask.mo-in { animation: mo-mask .9s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--mo-i, 0) * 80ms + 80ms); }
+
+  /* ---- progress ring + bars ---- */
+  .mo-ready .bd-progress-ring { animation: mo-ring 1.6s cubic-bezier(.2,.7,.2,1) .5s both; }
+  .mo-ready .breakdown-track > i { transform-origin: 0 50%; animation: mo-grow 1.1s cubic-bezier(.2,.7,.2,1) .3s both; }
+
+  /* ---- signature gradient text ---- */
+  .bd-hero-copy h1 em, .ba-story-copy h1 span, .ba-title em { background-size: 220% 100% !important; animation: mo-shift 5s ease-in-out infinite alternate; }
+
+  /* ---- floating / ambient ---- */
+  .bd-announcement { animation: mo-float 5s ease-in-out 1.2s infinite; }
+  .bd-preview-float, .bd-auth-preview { animation: mo-float 6s ease-in-out .6s infinite; }
+  .bd-hero { position: relative; isolation: isolate; }
+  .bd-hero::before { content: ""; position: absolute; inset: -20% -10% auto; height: 120%; z-index: -1; pointer-events: none;
+    background: radial-gradient(35% 45% at 20% 35%, rgba(91,71,245,.16), transparent 70%), radial-gradient(30% 40% at 78% 30%, rgba(236,72,153,.12), transparent 70%), radial-gradient(28% 35% at 88% 70%, rgba(255,138,76,.12), transparent 70%);
+    animation: mo-drift 14s ease-in-out infinite alternate; }
+
+  /* ---- hover lifts ---- */
+  .skill-card, .ticket-card, .analytics-card, .next-step-card, .activity-card, .bd-snapshot-sections button, .bd-stat-band > div, .bd-how li {
+    transition: translate .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; }
+  .skill-card:hover, .ticket-card:hover, .analytics-card:hover, .next-step-card:hover, .bd-how li:hover { translate: 0 -6px; box-shadow: 0 24px 40px -24px rgba(43,29,140,.35); }
+  .bd-snapshot-sections button:hover { translate: 0 -3px; }
+  .btn { transition: transform .15s, box-shadow .2s, filter .2s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(1px) scale(.98); }
+
+  /* ---- exam ---- */
+  .option:has(input:checked) { animation: mo-pop .35s cubic-bezier(.3,1.5,.5,1); }
+  .timer.mo-low { animation: mo-pop 1s ease-in-out infinite; }
+
+  /* ---- modal + toast ---- */
+  dialog#modal[open] { animation: mo-modal .4s cubic-bezier(.3,1.4,.5,1) both; }
+  dialog#modal[open]::backdrop { animation: mo-backdrop .3s ease both; }
+  #toast.show, #toast.visible { animation: mo-toast .35s cubic-bezier(.2,.7,.2,1) both; }
+}
+
+@media print { .mo-reveal, .mo-mask { opacity: 1 !important; transform: none !important; clip-path: none !important; } .mo-progress { display: none; } }
