@@ -10,7 +10,7 @@
 
   // ======================= 1. LISTENING PLAYER =======================
   let pausedAt = null;     // { session, part, index }
-  let nowIndex = 0, nowTotal = 0;
+  let nowIndex = 0, nowTotal = 0, dragging = false;
 
   function chunksFor(session, part) {
     const d = dataFor('listening', session);
@@ -47,7 +47,10 @@
   }
   function setProgress() {
     const bar = document.querySelector('.bdx-audio-progress i');
-    if (bar) bar.style.width = (nowTotal ? Math.round((nowIndex / nowTotal) * 100) : 0) + '%';
+    if (dragging) return;
+    const pct = (nowTotal ? Math.round((nowIndex / nowTotal) * 100) : 0) + '%';
+    if (bar) bar.style.width = pct;
+    const knob = document.querySelector('.bdx-knob'); if (knob) knob.style.left = pct;
   }
 
   if (hasTTS && typeof playAudio === 'function') {
@@ -168,16 +171,41 @@
     if (audioPlaying) playAudio(nowIndex); // restart current sentence at the new speed
   }
   document.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-bdx="audio-back"],[data-bdx="audio-fwd"],[data-bdx="audio-speed"],.bdx-audio-progress.seekable');
+    const t = e.target.closest('[data-bdx="audio-back"],[data-bdx="audio-fwd"],[data-bdx="audio-speed"]');
     if (!t || !practiceOK()) return;
     if (t.dataset.bdx === 'audio-back') seekTo(currentIndex() - 1);
     else if (t.dataset.bdx === 'audio-fwd') seekTo(currentIndex() + 1);
     else if (t.dataset.bdx === 'audio-speed') cycleSpeed(t);
-    else {
-      const r = t.getBoundingClientRect();
-      const total = chunksFor(active, active.part || 0).length;
-      seekTo(Math.floor(((e.clientX - r.left) / Math.max(1, r.width)) * total));
-    }
+  });
+  // Drag (or click) the slider to move through the recording.
+  document.addEventListener('pointerdown', (e) => {
+    const bar = e.target.closest('.bdx-audio-progress.seekable');
+    if (!bar || !practiceOK() || e.button > 0) return;
+    e.preventDefault();
+    const total = chunksFor(active, active.part || 0).length;
+    if (!total) return;
+    dragging = true; bar.classList.add('dragging');
+    const frac = (x) => { const r = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / Math.max(1, r.width))); };
+    const show = (f) => {
+      const pct = Math.round(f * 100) + '%';
+      bar.querySelector('i').style.width = pct;
+      const k = bar.querySelector('.bdx-knob'); if (k) k.style.left = pct;
+      const s = $('#audio-status'); if (s) s.textContent = `Drag to choose a point… ${pct}`;
+    };
+    show(frac(e.clientX));
+    const move = (ev) => show(frac(ev.clientX));
+    const up = (ev) => {
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+      dragging = false; bar.classList.remove('dragging');
+      seekTo(Math.min(total - 1, Math.floor(frac(ev.clientX) * total)));
+    };
+    document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  });
+  // Keyboard: arrows move one sentence when the slider has focus.
+  document.addEventListener('keydown', (e) => {
+    if (!e.target.closest || !e.target.closest('.bdx-audio-progress.seekable') || !practiceOK()) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); seekTo(currentIndex() - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); seekTo(currentIndex() + 1); }
   });
 
   // ======================= 2. SPEAKING LIVE ANALYSIS =======================
@@ -305,7 +333,12 @@
         const sp = mk('audio-speed', speed + '×', 'Playback speed');
         pb.insertAdjacentElement('afterend', back); back.insertAdjacentElement('afterend', fwd); fwd.insertAdjacentElement('afterend', sp);
         const bar = document.querySelector('.bdx-audio-progress');
-        if (bar) { bar.classList.add('seekable'); bar.title = 'Click to jump to that point'; bar.removeAttribute('aria-hidden'); }
+        if (bar) {
+          bar.classList.add('seekable'); bar.title = 'Drag to move through the recording'; bar.removeAttribute('aria-hidden');
+          bar.setAttribute('role', 'slider'); bar.setAttribute('aria-label', 'Audio position'); bar.tabIndex = 0;
+          if (!bar.querySelector('.bdx-knob')) { const k = document.createElement('b'); k.className = 'bdx-knob'; bar.appendChild(k); }
+          setProgress();
+        }
       }
       updatePauseButton();
     }
