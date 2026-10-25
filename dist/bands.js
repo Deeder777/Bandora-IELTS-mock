@@ -96,37 +96,99 @@
     const fillerList = text.toLowerCase().match(FILLERS) || [];
     return { parts, text, words, secs: Math.max(1, secs), conf: confN ? conf / confN : null, pauses, fillers: fillerList };
   }
+  // Strict, examiner-style estimate. Calibrated so that only clearly advanced speech reaches 7+.
+  const COMMON_ERRORS = [
+    /\b(he|she|it) (don't|have|do not|go|want|like|make|think)\b/g, /\bi (is|are|has|goes|wants|likes)\b/g, /\b(they|we|you) (is|was|has|goes)\b/g,
+    /\bi am agree\b/g, /\bmore (better|easier|bigger|faster|cheaper|worse)\b/g, /\b(informations|advices|furnitures|knowledges|equipments|homeworks|peoples|childrens|stuffs)\b/g,
+    /\b(did|didn't|does|doesn't|can|can't|will|should|must) (went|goes|came|saw|was|did|made|bought|had)\b/g, /\bmost (best|biggest|important thing)\b/g,
+    /\bi (go|went) to (home)\b/g, /\b(very|so) (much )?(enjoy|like)\b/g, /\bexplain me\b/g, /\bdiscuss about\b/g
+  ];
+  const STRUCTURES = {
+    relative: /\b(which|who|whom|whose|where) \w+/,
+    conditional: /\bif (i|you|we|they|he|she|it|people|someone)\b.*?\b(would|will|could|might|had)\b|\bif i were\b|\bunless\b/,
+    perfect: /\b(have|has|had|'ve|'d) (been|got|made|seen|done|gone|had|lived|worked|studied|learned|learnt|tried|never|always|already|just|\w+ed)\b/,
+    passive: /\b(is|are|was|were|be|been|being) (\w+ed|made|done|seen|known|built|given|taken|taught|held|told|brought)\b/,
+    modal: /\b(might|could|should|would|must) (have|be|probably|definitely|\w+)\b/,
+    contrast: /\b(although|though|whereas|even though|despite|in spite of|on the other hand|however)\b/,
+    habit: /\b(used to|tend to|would usually|i'd usually)\b/,
+    purpose: /\b(in order to|so that|so as to)\b/,
+    cleft: /\b(what i (really )?(like|love|mean|find)|the (thing|reason|main reason) (is|why))\b/,
+    comparison: /\b(\w+er than|more \w+ than|less \w+ than|as \w+ as|the (most|least) \w+)\b/
+  };
+  const IDIOMS = /\b(to be honest|as far as i('m| am) concerned|on the whole|by and large|it goes without saying|when it comes to|a great deal of|in the long run|it depends on|from my perspective|tend to|to some extent|i'd say|nowadays|broaden (my|their|our) horizons|time-consuming|cutting-edge|work-life balance|in a nutshell|first and foremost|all in all|not to mention|let alone|the thing is|i'm (really )?keen on|over the moon|once in a blue moon|hit the books|a piece of cake|keep in touch|look forward to|get the hang of|make the most of|take for granted|on the go)\b/g;
+  const BASIC = new Set('the a an and but or so because very really good bad nice thing things like just also too much many lot lots of is are was were be been have has had do does did go goes went get got make made it this that these those i you he she we they my your our their me him her us them there here what when where why how yes no not can will would could should people time day place big small happy sad important interesting beautiful'.split(' '));
+  function mattr(words, win) {
+    if (words.length <= win) return new Set(words).size / Math.max(1, words.length);
+    let sum = 0, n = 0;
+    for (let i = 0; i + win <= words.length; i += 5) { sum += new Set(words.slice(i, i + win)).size / win; n++; }
+    return sum / n;
+  }
   function speakingEstimate(h) {
     const d = speechData(h);
     if (!d) return null;
     const W = d.words.length;
-    if (W < 40) return { tooShort: true, words: W, data: d };
-    const min = Math.max(d.secs, W / 3.2) / 60, wpm = Math.round(W / min);   // cap at ~190 wpm if timing is missing
-    const fillerRatio = d.fillers.length / W, pausesPerMin = d.pauses / Math.max(min, 0.5);
-    const clampB = (x) => Math.max(4, Math.min(9, Math.round(x)));
-    let fc = wpm < 60 ? 4.5 : wpm < 80 ? 5.5 : wpm < 100 ? 6 : wpm < 120 ? 6.5 : wpm < 145 ? 7.2 : 7.6;
-    if (fillerRatio > 0.08) fc -= 1; else if (fillerRatio > 0.04) fc -= 0.5;
-    if (pausesPerMin > 2) fc -= 0.5;
+    if (W < 60) return { tooShort: true, words: W, data: d };
+    const lower = d.text.toLowerCase();
+    const timed = d.parts.some((p) => p.st && p.st.s > 5);
+    const min = timed ? Math.max(d.secs, W / 3.2) / 60 : null;
+    const wpm = timed ? Math.round(W / min) : null;
+    const fillerRatio = d.fillers.length / W;
+    const pausesPerMin = timed ? d.pauses / Math.max(min, 0.5) : 0;
     const longTurn = Math.max(...d.parts.map((p) => (p.text.match(/\S+/g) || []).length));
-    if (longTurn >= 150) fc += 0.5;
-    const content = d.words.filter((w) => w.length > 3);
-    const variety = content.length ? new Set(content).size / content.length : 0;
-    const advanced = d.words.filter((w) => w.length >= 8).length / W;
-    let lr = variety > 0.75 && advanced > 0.1 ? 8 : variety > 0.65 && advanced > 0.07 ? 7 : variety > 0.55 ? 6 : 5;
-    const complex = (d.text.match(SPEAK_COMPLEX) || []).length / W * 100;
-    let gra = complex >= 7 ? 8 : complex >= 5 ? 7 : complex >= 3 ? 6 : 5;
-    const p = d.conf == null ? null : d.conf >= 0.92 ? 8 : d.conf >= 0.85 ? 7 : d.conf >= 0.75 ? 6 : 5;
-    const crit = { c1: clampB(fc), c2: clampB(lr), c3: clampB(gra), c4: p == null ? null : clampB(p) };
+    const partsDone = d.parts.length;
+
+    // Fluency & coherence
+    let fc = !timed ? 4.5 : wpm < 70 ? 4 : wpm < 90 ? 4.5 : wpm < 105 ? 5 : wpm < 120 ? 5.5 : wpm < 135 ? 6 : wpm < 150 ? 6.5 : 7;
+    if (fillerRatio > 0.06) fc -= 1; else if (fillerRatio > 0.03) fc -= 0.5;
+    if (pausesPerMin > 1.5) fc -= 1; else if (pausesPerMin > 0.7) fc -= 0.5;
+    const linkers = (lower.match(/\b(firstly|secondly|moreover|furthermore|however|on the other hand|as a result|for example|for instance|in addition|apart from that|having said that|what's more|in contrast|consequently|overall|actually|i mean)\b/g) || []).length;
+    if (linkers / W * 100 >= 1.5 && fc >= 6) fc += 0.5;
+    if (longTurn >= 220) fc += 0.5; else if (longTurn < 120) fc = Math.min(fc, 5.5);
+
+    // Lexical resource
+    const mt = mattr(d.words, 50);
+    const content = d.words.filter((w) => w.length > 3 && !BASIC.has(w));
+    const advShare = content.filter((w) => w.length >= 8).length / W;
+    const basicShare = d.words.filter((w) => BASIC.has(w)).length / W;
+    const idioms = (lower.match(IDIOMS) || []).length;
+    let lr = mt < 0.62 ? 4 : mt < 0.68 ? 4.5 : mt < 0.73 ? 5 : mt < 0.77 ? 5.5 : mt < 0.81 ? 6 : mt < 0.85 ? 6.5 : mt < 0.88 ? 7 : 7.5;
+    if (advShare >= 0.18) lr += 0.5; else if (advShare < 0.08) lr -= 0.5;
+    if (basicShare > 0.6) lr -= 0.5;
+    if (idioms >= 3) lr += 0.5; else if (idioms === 0) lr = Math.min(lr, 6);
+
+    // Grammatical range & accuracy
+    const sentencesLike = lower.split(/[.!?]+|\b(?:and then|and|but|so)\b/);
+    const found = Object.keys(STRUCTURES).filter((k) => sentencesLike.some((x) => STRUCTURES[k].test(x)) || STRUCTURES[k].test(lower));
+    const kinds = found.length;
+    let gra = kinds <= 3 ? 4.5 : kinds === 4 ? 5 : kinds === 5 ? 5.5 : kinds === 6 ? 6 : kinds === 7 ? 6.5 : kinds === 8 ? 7 : kinds === 9 ? 7.5 : 8;
+    const errors = COMMON_ERRORS.reduce((a, re) => a + (lower.match(re) || []).length, 0);
+    const errRate = errors / W * 100;
+    if (errRate >= 2) gra -= 1.5; else if (errRate >= 1) gra -= 1; else if (errors >= 2) gra -= 0.5;
+
+    // Pronunciation (speech-recognition confidence is a weak signal; never let it carry the score)
+    let p = d.conf == null ? null : d.conf >= 0.95 ? 7 : d.conf >= 0.9 ? 6.5 : d.conf >= 0.83 ? 6 : d.conf >= 0.75 ? 5.5 : d.conf >= 0.65 ? 5 : 4.5;
+    if (p != null) p = Math.min(p, fc + 1);
+
+    // Global caps: not enough speech or skipped parts cannot score high
+    let cap = 9;
+    if (W < 150) cap = 5; else if (W < 250) cap = 5.5; else if (W < 400) cap = 6.5;
+    if (partsDone < 3) cap = Math.min(cap, partsDone === 1 ? 5 : 6);
+    const crit = {};
+    [['c1', fc], ['c2', lr], ['c3', gra], ['c4', p]].forEach(([k, v]) => { crit[k] = v == null ? null : Math.max(4, Math.min(8, Math.floor(v + 0.25))); });
     const vals = Object.values(crit).filter((v) => v != null);
-    const overall = roundBand(vals.reduce((a, b) => a + b, 0) / vals.length);
+    let overall = roundBand(vals.reduce((a, b) => a + b, 0) / vals.length);
+    overall = Math.min(overall, cap);
+
     const topFillers = Object.entries(d.fillers.reduce((m, f) => (m[f] = (m[f] || 0) + 1, m), {})).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([f, n]) => `“${f}” ×${n}`).join(', ');
+    const missing = Object.keys(STRUCTURES).filter((k) => !found.includes(k));
+    const capNote = cap < 9 ? ` Score capped at ${cap}: ${W < 400 ? `only ${W} words recognised (a full test is usually 400+).` : ''}${partsDone < 3 ? ` Only ${partsDone} of 3 parts answered.` : ''}` : '';
     const tips = {
-      c1: wpm < 90 ? `You spoke at about ${wpm} words per minute. Aim for 110–150 by linking ideas instead of stopping between sentences.` : fillerRatio > 0.04 ? `Good pace (${wpm} wpm), but fillers slowed you down${topFillers ? ': ' + topFillers : ''}. Pause silently instead.` : `Good pace (${wpm} wpm) with few fillers.${longTurn < 150 ? ' In Part 2, keep talking for the full two minutes.' : ''}`,
-      c2: variety > 0.65 ? `Varied vocabulary (${Math.round(variety * 100)}% different words). Add a few topic-specific or idiomatic phrases to push higher.` : `You repeated many words (${Math.round(variety * 100)}% variety). Paraphrase: instead of repeating a word, use a synonym or describe it.`,
-      c3: complex >= 5 ? `Good range of complex structures (${complex.toFixed(1)} per 100 words).` : `Mostly simple sentences. Add “because…”, “which…”, “if I had…”, “I used to…” to show range.`,
-      c4: d.conf == null ? 'Not measured — your browser did not report recognition confidence.' : d.conf >= 0.85 ? `Clearly understood by speech recognition (${Math.round(d.conf * 100)}% confidence).` : `Speech recognition was unsure of some words (${Math.round(d.conf * 100)}% confidence). Slow down slightly and stress key words.`
+      c1: (!timed ? 'Speaking time was not measured, so pace could not be rewarded. Use live analysis while you answer. ' : `About ${wpm} words per minute${pausesPerMin > 0.7 ? `, with ${d.pauses} long pauses` : ''}. Band 7+ needs 130–160 wpm with almost no hesitation. `) + (fillerRatio > 0.03 ? `Too many fillers${topFillers ? ' (' + topFillers + ')' : ''}. ` : '') + (longTurn < 220 ? `Your longest answer was ${longTurn} words; a strong Part 2 is about 250–300.` : 'Good extended Part 2 answer.') + capNote,
+      c2: `Word variety ${Math.round(mt * 100)}% (band 7 needs ~85%+), ${Math.round(advShare * 100)}% less-common words, ${idioms} idiomatic phrase${idioms === 1 ? '' : 's'}. ` + (idioms < 3 ? 'Use natural collocations like “when it comes to”, “to some extent”, “make the most of”.' : 'Keep using precise, less common vocabulary.'),
+      c3: `${kinds} of 10 structure types used${errors ? `, ${errors} likely grammar error${errors === 1 ? '' : 's'} detected` : ''}. ` + (missing.length ? `Missing: ${missing.slice(0, 4).join(', ')}. Band 7 needs a wide mix used accurately.` : 'Wide range — focus on accuracy.'),
+      c4: d.conf == null ? 'Not measured — your browser did not report recognition confidence.' : `Speech recognition confidence ${Math.round(d.conf * 100)}%. This is only a rough signal; work on word stress, intonation and clear word endings.`
     };
-    return { crit, overall, tips, wpm, words: W, variety, complex, fillers: d.fillers.length, pauses: d.pauses, conf: d.conf, data: d };
+    return { crit, overall, tips, wpm: wpm == null ? '—' : wpm, words: W, variety: mt, complex: kinds, fillers: d.fillers.length, pauses: d.pauses, conf: d.conf, cap, data: d };
   }
 
   window.Bands = { speakingEstimate, speechData, sessionBand, latestBands, overall, roundBand, fmtBand, CRITERIA, writingChecks };
