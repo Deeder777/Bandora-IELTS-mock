@@ -82,7 +82,7 @@
           }
           const c = chunks[nowIndex];
           const u = new SpeechSynthesisUtterance(c.text);
-          u.lang = 'en-GB'; u.rate = 0.92;
+          u.lang = 'en-GB'; u.rate = session?.mode === 'exam' ? 0.92 : 0.92 * speed;
           const v = voiceFor(c.speaker || '_'); if (v) { u.voice = v; u.lang = v.lang; }
           u.onend = () => { if (!current()) return; nowIndex++; setProgress(); speakNext(); };
           u.onerror = (e) => {
@@ -140,6 +140,45 @@
     b.textContent = isPaused ? 'Resume' : 'Pause';
     b.disabled = !isPaused && !audioPlaying;
   }
+
+  // Practice-mode controls: back / forward one sentence, click the bar to jump, playback speed.
+  const SPEEDS = [0.75, 1, 1.25, 1.5];
+  let speed = 1;
+  try { const v = parseFloat(localStorage.getItem('bandora-listen-speed')); if (SPEEDS.includes(v)) speed = v; } catch (e) {}
+  function practiceOK() { return !!(active && active.type === 'listening' && active.mode !== 'exam'); }
+  function seekTo(index) {
+    if (!practiceOK()) return;
+    const part = active.part || 0;
+    const total = chunksFor(active, part).length;
+    if (!total) return;
+    index = Math.max(0, Math.min(total - 1, index));
+    nowTotal = total;
+    if (audioPlaying) { playAudio(index); return; }
+    stopAudio();
+    nowIndex = index;
+    pausedAt = { session: active, part, index, ready: true };
+    setProgress(); updatePauseButton();
+    const s = $('#audio-status'); if (s) s.textContent = `Moved to ${Math.round((index / total) * 100)}%. Press Resume to listen from here.`;
+  }
+  function currentIndex() { return (pausedAt && pausedAt.session === active) ? pausedAt.index : nowIndex; }
+  function cycleSpeed(btn) {
+    speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+    try { localStorage.setItem('bandora-listen-speed', String(speed)); } catch (e) {}
+    if (btn) btn.textContent = speed + '×';
+    if (audioPlaying) playAudio(nowIndex); // restart current sentence at the new speed
+  }
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-bdx="audio-back"],[data-bdx="audio-fwd"],[data-bdx="audio-speed"],.bdx-audio-progress.seekable');
+    if (!t || !practiceOK()) return;
+    if (t.dataset.bdx === 'audio-back') seekTo(currentIndex() - 1);
+    else if (t.dataset.bdx === 'audio-fwd') seekTo(currentIndex() + 1);
+    else if (t.dataset.bdx === 'audio-speed') cycleSpeed(t);
+    else {
+      const r = t.getBoundingClientRect();
+      const total = chunksFor(active, active.part || 0).length;
+      seekTo(Math.floor(((e.clientX - r.left) / Math.max(1, r.width)) * total));
+    }
+  });
 
   // ======================= 2. SPEAKING LIVE ANALYSIS =======================
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -260,6 +299,13 @@
       if (active.mode !== 'exam' && !document.querySelector('[data-bdx="audio-pause"]')) {
         const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'btn secondary small-btn'; pb.dataset.bdx = 'audio-pause'; pb.textContent = 'Pause';
         play.insertAdjacentElement('afterend', pb);
+        const mk = (k, txt, title) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'btn secondary small-btn'; x.dataset.bdx = k; x.textContent = txt; x.title = title; x.setAttribute('aria-label', title); return x; };
+        const back = mk('audio-back', '« Back', 'Back one sentence');
+        const fwd = mk('audio-fwd', 'Skip »', 'Forward one sentence');
+        const sp = mk('audio-speed', speed + '×', 'Playback speed');
+        pb.insertAdjacentElement('afterend', back); back.insertAdjacentElement('afterend', fwd); fwd.insertAdjacentElement('afterend', sp);
+        const bar = document.querySelector('.bdx-audio-progress');
+        if (bar) { bar.classList.add('seekable'); bar.title = 'Click to jump to that point'; bar.removeAttribute('aria-hidden'); }
       }
       updatePauseButton();
     }
