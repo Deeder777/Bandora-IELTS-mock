@@ -24,7 +24,7 @@
 
   /* ---- header ---- */
   .mo-ready .bd-header.mo-first { animation: mo-drop .6s cubic-bezier(.2,.7,.2,1) both; }
-  .mo-progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #5B47F5, #B23BD6, #F0703A); pointer-events: none; z-index: 2; }
+  .mo-progress { position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #127FA6, #F062B2, #F27ABE); pointer-events: none; z-index: 2; }
 
   /* ---- entrance (on page change) ---- */
   .mo-ready .mo-enter { animation: mo-rise .8s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--mo-i, 0) * 70ms); }
@@ -48,13 +48,13 @@
   .bd-preview-float, .bd-auth-preview { animation: mo-float 6s ease-in-out .6s infinite; }
   .bd-hero { position: relative; isolation: isolate; }
   .bd-hero::before { content: ""; position: absolute; inset: -20% -10% auto; height: 120%; z-index: -1; pointer-events: none;
-    background: radial-gradient(35% 45% at 20% 35%, rgba(91,71,245,.16), transparent 70%), radial-gradient(30% 40% at 78% 30%, rgba(236,72,153,.12), transparent 70%), radial-gradient(28% 35% at 88% 70%, rgba(255,138,76,.12), transparent 70%);
+    background: radial-gradient(35% 45% at 20% 35%, rgba(18,127,166,.16), transparent 70%), radial-gradient(30% 40% at 78% 30%, rgba(228,66,158,.12), transparent 70%), radial-gradient(28% 35% at 88% 70%, rgba(242,122,190,.12), transparent 70%);
     animation: mo-drift 14s ease-in-out infinite alternate; }
 
   /* ---- hover lifts ---- */
   .skill-card, .ticket-card, .analytics-card, .next-step-card, .activity-card, .bd-snapshot-sections button, .bd-stat-band > div, .bd-how li {
     transition: translate .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; }
-  .skill-card:hover, .ticket-card:hover, .analytics-card:hover, .next-step-card:hover, .bd-how li:hover { translate: 0 -6px; box-shadow: 0 24px 40px -24px rgba(43,29,140,.35); }
+  .skill-card:hover, .ticket-card:hover, .analytics-card:hover, .next-step-card:hover, .bd-how li:hover { translate: 0 -6px; box-shadow: 0 24px 40px -24px rgba(9,106,141,.35); }
   .bd-snapshot-sections button:hover { translate: 0 -3px; }
   .btn { transition: transform .15s, box-shadow .2s, filter .2s; }
   .btn:hover { transform: translateY(-2px); }

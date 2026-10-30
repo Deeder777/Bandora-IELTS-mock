@@ -1,0 +1,55 @@
+/* Bandora · Pelmatech theme — sky blue #0593C6, white #FCFFFF, hot pink #D83995.
+   Loaded after theme-solix.css and overrides its hero, header and panels. */
+:root{--pm-sky:#0593C6;--pm-sky-dark:#047AA6;--pm-white:#FCFFFF;--pm-pink:#D83995;--pm-ink:#0B2B3A;--pm-bg:#F4FBFD;
+  --pm-blur:radial-gradient(16% 42% at 63% 42%,rgba(18,40,110,.7),transparent 70%),radial-gradient(24% 52% at 56% 55%,rgba(216,57,149,.8),transparent 70%),radial-gradient(30% 58% at 49% 62%,rgba(255,170,140,.7),transparent 70%);
+  --pm-lines:repeating-linear-gradient(90deg,rgba(255,255,255,.075) 0 3px,transparent 3px 14px)}
+body{background:var(--pm-bg)}
+
+/* header: sky glass bar */
+.bd-header{background:rgba(5,147,198,.94)!important;border-bottom:1px solid rgba(255,255,255,.22)!important}
+.bd-header .brand-mark{background:rgba(255,255,255,.22)!important;border:1px solid rgba(255,255,255,.45)!important}
+.bd-navigation{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.38)!important}
+.bd-navigation button{color:#fff!important}
+.bd-navigation button:hover{background:rgba(255,255,255,.2)!important}
+.bd-navigation button[aria-current]{background:#fff!important;color:var(--pm-sky-dark)!important}
+
+/* hero: sky blue with a motion-blur figure of pink and peach, vertical light lines */
+.bdx-hero{background:var(--pm-blur),var(--pm-lines),linear-gradient(180deg,#0593C6 0%,#14A3D6 58%,#6CCBEC 86%,var(--pm-bg) 100%)!important;padding-bottom:170px!important}
+.bdx-hero::before{display:none!important}
+.bdx-hero::after{background:linear-gradient(180deg,transparent,var(--pm-bg))!important}
+.bdx-hero h1{font-weight:500!important;letter-spacing:-.045em!important}
+.bdx-hero .bdx-grad-text{background:linear-gradient(90deg,#FFFFFF,#FFD1EA)!important;-webkit-background-clip:text!important;background-clip:text!important;animation:none!important}
+.bdx-hero .bdx-lede,.bdx-hero .bdx-q,.bdx-hero .bdx-ticks{color:rgba(255,255,255,.9)!important}
+.bdx-hero .bdx-ticks .icon{color:#fff!important}
+.bdx-hero .bdx-btn--grad{background:#fff!important;color:var(--pm-sky-dark)!important;box-shadow:0 14px 30px -16px rgba(0,60,90,.55)!important}
+.bdx-hero .bdx-btn--ghost{background:rgba(255,255,255,.1)!important;border:1.5px solid rgba(255,255,255,.75)!important;color:#fff!important}
+.bdx-hero .bdx-pill{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.4)!important;color:#fff!important}
+.bdx-hero .bdx-pill b,.bdx-hero .bdx-soon{background:var(--pm-pink)!important;color:#fff!important}
+.bdx-hero .bdx-seg{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.35)!important}
+.bdx-hero .bdx-seg button[aria-pressed=true]{background:#fff!important;color:var(--pm-sky-dark)!important}
+.bdx-hero .bdx-report{background:rgba(255,255,255,.2)!important;border:1px solid rgba(255,255,255,.5)!important;backdrop-filter:blur(22px);color:#fff!important;box-shadow:0 30px 70px -30px rgba(0,50,80,.5)!important}
+.bdx-hero .bdx-report *{color:#fff}
+.bdx-hero .bdx-report .bdx-chip{background:rgba(255,255,255,.25)!important}
+.bdx-hero .bdx-float--b{background:#fff!important;color:var(--pm-sky-dark)!important}
+.bdx-hero .bdx-float--a{background:rgba(11,43,58,.92)!important}
+
+/* primary buttons outside the hero: hot pink pill */
+.bdx-btn--grad,.btn.primary{background:var(--pm-pink)!important;color:#fff!important;box-shadow:0 12px 26px -14px rgba(216,57,149,.75)!important}
+.bdx-btn--grad:hover,.btn.primary:hover{background:#C42E85!important}
+.bdx-eyebrow{color:var(--pm-pink)!important}
+
+/* coloured panels: sky with the same blur figure */
+.bdx-how,.bdx-res-hero,.bdx-cta,.st-streak{background:var(--pm-blur),var(--pm-lines),linear-gradient(160deg,#0593C6,#0A86B8)!important}
+.bdx-how::before,.bdx-res-hero::before,.bdx-cta::before{display:none!important}
+.bdx-how-glow,.bdx-res-glow{display:none}
+.bdx-cta .bdx-btn--grad,.bdx-how .bdx-btn--grad{background:#fff!important;color:var(--pm-sky-dark)!important}
+.st-flame b{background:linear-gradient(90deg,#fff,#FFD1EA)!important;-webkit-background-clip:text!important;background-clip:text!important}
+.st-week i.on{background:linear-gradient(180deg,#FFB3DA,var(--pm-pink))!important}
+.st-week i.on em{color:#fff!important}
+
+/* icons and exam bar */
+.st-drill-ic,.bdx-card-ic{background:linear-gradient(135deg,var(--pm-sky),var(--pm-pink))!important}
+.exam-top{background:linear-gradient(90deg,#0593C6,#0A86B8)!important}
+.question-nav button.answered{background:var(--pm-sky-dark)!important;border-color:var(--pm-sky-dark)!important}
+.bdx-res-hero .btn,.bdx-res-hero .bdx-btn{white-space:nowrap}
+.bdx-res-main{flex:1 1 520px}

@@ -12,7 +12,7 @@
   const ROMAN = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii'];
 
   // ---------------- map drawing ----------------
-  const C = { land: '#F7F6FC', line: '#D9D5EC', path: '#E7E3F5', water: '#DCEBFA', waterInk: '#4F7FB8', room: '#FFFFFF', ink: '#2A2550', soft: '#7B7699', accent: '#5B47F5' };
+  const C = { land: '#F5FBFD', line: '#D3E7EE', path: '#DDF0F7', water: '#DCF2FA', waterInk: '#4F9CB8', room: '#FFFFFF', ink: '#1B4C5E', soft: '#5D7F8C', accent: '#127FA6' };
   function svgEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function drawMap(m) {
     const W = 560, H = 380;
@@ -26,8 +26,8 @@
     (m.dashed || []).forEach((p) => { s += `<polyline points="${p.join(' ')}" fill="none" stroke="${C.soft}" stroke-width="3" stroke-dasharray="10 7"/>`; });
     (m.rooms || []).forEach((r) => { s += `<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" rx="8" fill="${C.room}" stroke="${C.line}" stroke-width="2"/>`; });
     (m.fixed || []).forEach((f) => {
-      if (f.box) s += `<rect x="${f.box[0]}" y="${f.box[1]}" width="${f.box[2]}" height="${f.box[3]}" rx="8" fill="#EEEAFB" stroke="#CFC8F0" stroke-width="2"/>`;
-      if (f.circle) s += `<circle cx="${f.circle[0]}" cy="${f.circle[1]}" r="${f.circle[2]}" fill="#EEEAFB" stroke="#CFC8F0" stroke-width="2"/>`;
+      if (f.box) s += `<rect x="${f.box[0]}" y="${f.box[1]}" width="${f.box[2]}" height="${f.box[3]}" rx="8" fill="#E6F8FF" stroke="#BFE4F2" stroke-width="2"/>`;
+      if (f.circle) s += `<circle cx="${f.circle[0]}" cy="${f.circle[1]}" r="${f.circle[2]}" fill="#E6F8FF" stroke="#BFE4F2" stroke-width="2"/>`;
       String(f.label).split('|').forEach((line, i, arr) => { s += `<text x="${f.at[0]}" y="${f.at[1] + (i - (arr.length - 1) / 2) * 15}" font-size="12.5" font-weight="600" fill="${C.ink}" text-anchor="middle" dominant-baseline="middle">${svgEsc(line)}</text>`; });
     });
     (m.letters || []).forEach(([l, x, y]) => {
@@ -35,7 +35,7 @@
     });
     if (m.here) {
       const [x, y, label] = m.here;
-      s += `<circle cx="${x}" cy="${y}" r="8" fill="#F0703A" stroke="#fff" stroke-width="3"/><text x="${x + (m.hereAlign === 'start' ? 14 : 0)}" y="${y - 16}" font-size="12" font-weight="700" fill="#B4471A" text-anchor="${m.hereAlign || 'middle'}">${svgEsc(label || 'You are here')}</text>`;
+      s += `<circle cx="${x}" cy="${y}" r="8" fill="#F27ABE" stroke="#fff" stroke-width="3"/><text x="${x + (m.hereAlign === 'start' ? 14 : 0)}" y="${y - 16}" font-size="12" font-weight="700" fill="#B8287A" text-anchor="${m.hereAlign || 'middle'}">${svgEsc(label || 'You are here')}</text>`;
     }
     s += `<g transform="translate(${W - 34},40)"><path d="M0 -18 L7 6 L0 1 L-7 6 Z" fill="${C.ink}"/><text x="0" y="20" font-size="11" font-weight="700" fill="${C.ink}" text-anchor="middle">N</text></g>`;
     s += `<text x="18" y="${H - 14}" font-size="12" font-weight="700" fill="${C.soft}">${svgEsc(m.title)}</text>`;

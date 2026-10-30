@@ -34,8 +34,8 @@
     const o = Object.assign({ size: 132, stroke: 12, light: true, label: 'OVERALL' }, opts || {});
     const r = 56, frac = band == null ? 0 : band / 9;
     return `<div class="bdx-ring" style="width:${o.size}px;height:${o.size}px" role="img" aria-label="${o.label} band ${B.fmtBand(band)} of 9">
-      <svg viewBox="0 0 132 132" aria-hidden="true"><defs><linearGradient id="bdxG${o.size}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${o.light ? '#5B47F5' : '#8B7BFF'}"/><stop offset=".55" stop-color="${o.light ? '#B23BD6' : '#E07AD8'}"/><stop offset="1" stop-color="${o.light ? '#F0703A' : '#FF9A6B'}"/></linearGradient></defs>
-      <circle cx="66" cy="66" r="${r}" fill="none" stroke="${o.light ? '#ECECF5' : 'rgba(255,255,255,.14)'}" stroke-width="${o.stroke}"/>
+      <svg viewBox="0 0 132 132" aria-hidden="true"><defs><linearGradient id="bdxG${o.size}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${o.light ? '#127FA6' : '#6FD9FF'}"/><stop offset=".55" stop-color="${o.light ? '#F062B2' : '#FD91CE'}"/><stop offset="1" stop-color="${o.light ? '#F27ABE' : '#FDA8D8'}"/></linearGradient></defs>
+      <circle cx="66" cy="66" r="${r}" fill="none" stroke="${o.light ? '#E7F1F5' : 'rgba(255,255,255,.14)'}" stroke-width="${o.stroke}"/>
       <circle class="bdx-ring-arc" cx="66" cy="66" r="${r}" fill="none" stroke="url(#bdxG${o.size})" stroke-width="${o.stroke}" stroke-linecap="round" stroke-dasharray="${(C_RING * frac).toFixed(1)} ${C_RING.toFixed(1)}" transform="rotate(-90 66 66)"/></svg>
       <div class="bdx-ring-value"><strong class="bdx-count">${B.fmtBand(band)}</strong><span>${o.label}</span></div></div>`;
   }
@@ -67,10 +67,10 @@
     const full = saved.history.filter((h) => !h.questionIds).length;
     const ticketsDone = TestTickets.filter((t) => ORDER.every((type) => fullDone(t.sections[type]))).length;
     return [
-      ['Diagnose', 'Diagnostic mock', 'Sit one full ticket cold. Your report shows which section and which criterion cost you the most.', ['Full timed sections', 'Band per section', 'Weakest area flagged'], full >= 1, 'linear-gradient(135deg,#4B36E8,#8B3FE6)'],
-      ['Fix', 'Fix the weakest skill', 'Targeted practice on the one area holding your band back, with explanations after every attempt.', ['Short exercises', 'Mistake notebook', 'Criteria self-review'], full >= 3, 'linear-gradient(135deg,#7A35D9,#C23BB8)'],
+      ['Diagnose', 'Diagnostic mock', 'Sit one full ticket cold. Your report shows which section and which criterion cost you the most.', ['Full timed sections', 'Band per section', 'Weakest area flagged'], full >= 1, 'linear-gradient(135deg,#147A9F,#098CBB)'],
+      ['Fix', 'Fix the weakest skill', 'Targeted practice on the one area holding your band back, with explanations after every attempt.', ['Short exercises', 'Mistake notebook', 'Criteria self-review'], full >= 3, 'linear-gradient(135deg,#1E7C9E,#C23BB8)'],
       ['Stamina', 'Build test stamina', 'Complete whole tickets so two hours and forty-five minutes stops feeling long.', ['Exam mode timers', 'All four sections', 'Results per section'], ticketsDone >= 1, 'linear-gradient(135deg,#B23BA6,#E0567A)'],
-      ['Rehearse', 'Final dress rehearsal', 'A last full ticket in the week before your exam, compared with your first one.', ['Full ticket, exam mode', 'Band trend', 'Exam-date countdown'], ticketsDone >= 2, 'linear-gradient(135deg,#C2417A,#D9542E)']
+      ['Rehearse', 'Final dress rehearsal', 'A last full ticket in the week before your exam, compared with your first one.', ['Full ticket, exam mode', 'Band trend', 'Exam-date countdown'], ticketsDone >= 2, 'linear-gradient(135deg,#C2418A,#D9542E)']
     ];
   }
   function pathHTML() {

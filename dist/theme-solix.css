@@ -1,0 +1,92 @@
+/* Bandora · Solix theme — deep blue #096A8D, pure white #FFFFFF, bubblegum pink #FD91CE.
+   Loaded last; only overrides look and feel, never layout logic. */
+:root{
+  --sx-deep:#096A8D;--sx-royal:#12799E;--sx-blue:#127FA6;--sx-sky:#5BD3FF;
+  --sx-pink:#FD91CE;--sx-pink-strong:#E03395;--sx-white:#FFFFFF;--sx-bg:#F4FBFD;--sx-ink:#073A4D;
+  --sx-dots:radial-gradient(rgba(255,255,255,.55) 1.1px,transparent 1.7px);
+}
+body{background:var(--sx-bg)}
+.bd-main{background:none}
+
+/* ---------- header: deep blue bar with a pill navigation ---------- */
+.bd-header{background:rgba(9,106,141,.96);border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(14px)}
+.bd-header .brand,.bd-header .brand span{color:#fff}
+.bd-header .brand-mark{background:linear-gradient(135deg,#FFFFFF33,#FFFFFF10);border:1px solid rgba(255,255,255,.35);box-shadow:none}
+.bd-navigation{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.22)}
+.bd-navigation button{color:rgba(255,255,255,.82)}
+.bd-navigation button:hover{background:rgba(255,255,255,.12);color:#fff}
+.bd-navigation button[aria-current]{background:#fff;color:var(--sx-deep)}
+.bd-account .btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:999px}
+.mo-progress i,.mo-progress span{background:linear-gradient(90deg,var(--sx-pink),#fff)!important}
+
+/* ---------- type ---------- */
+.bdx h1,.bdx-h2,.bdx-h3,.bdx-res-main h1,.workspace-heading h1{font-family:'Plus Jakarta Sans',system-ui,sans-serif!important;font-weight:700!important;letter-spacing:-.035em!important}
+.bdx-eyebrow{color:var(--sx-blue)}
+
+/* ---------- buttons: pink pill primary, outline secondary ---------- */
+.bdx-btn{border-radius:999px}
+.bdx-btn--grad{background:linear-gradient(180deg,#F45BB2,var(--sx-pink-strong));color:#fff;box-shadow:0 14px 30px -14px rgba(224,51,149,.75),inset 0 1px 0 rgba(255,255,255,.3)}
+.bdx-btn--grad:hover{box-shadow:0 18px 36px -14px rgba(224,51,149,.85),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn.primary{background:linear-gradient(180deg,#F45BB2,var(--sx-pink-strong));border-color:transparent;box-shadow:0 10px 22px -12px rgba(224,51,149,.7)}
+.btn.primary:hover{background:linear-gradient(180deg,#F04EAA,#CC2A86)}
+.btn,.bdx-link{border-radius:999px}
+.bdx-link{border-radius:0;color:var(--sx-blue)}
+
+/* ---------- hero: full-width blue sky with dotted edges ---------- */
+.bdx-hero{margin-inline:calc(50% - 50vw);padding:72px max(24px,calc(50vw - 600px)) 190px;color:#fff;
+  background:radial-gradient(55% 60% at 50% 0%,rgba(91,211,255,.55),transparent 70%),
+             linear-gradient(180deg,#096A8D 0%,#0F769B 30%,#1380A8 62%,#0C8AB8 78%,#A9E8FF 91%,var(--sx-bg) 100%)}
+.bdx-hero::before{inset:0;filter:none;z-index:-1;background-image:var(--sx-dots);background-size:15px 15px;
+  -webkit-mask-image:radial-gradient(ellipse 48% 62% at 50% 42%,transparent 55%,#000 92%);mask-image:radial-gradient(ellipse 48% 62% at 50% 42%,transparent 55%,#000 92%);opacity:.55}
+.bdx-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:140px;z-index:-1;background:linear-gradient(180deg,transparent,var(--sx-bg))}
+.bdx-hero h1{color:#fff;font-size:clamp(46px,6.2vw,80px)!important;line-height:1.02}
+.bdx-hero .bdx-grad-text{background:linear-gradient(90deg,#FFD3EC 0%,#FD91CE 45%,#FF6FC1 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bdx-hero .bdx-lede{color:rgba(255,255,255,.84)}
+.bdx-hero .bdx-pill{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(8px)}
+.bdx-hero .bdx-pill b{background:var(--sx-pink);color:var(--sx-deep)}
+.bdx-hero .bdx-q{color:rgba(255,255,255,.8)}
+.bdx-hero .bdx-seg{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:999px}
+.bdx-hero .bdx-seg button{color:rgba(255,255,255,.85);border-radius:999px}
+.bdx-hero .bdx-seg button[aria-pressed=true]{background:#fff;color:var(--sx-deep)}
+.bdx-hero .bdx-btn--ghost{background:rgba(255,255,255,.08);color:#fff;border:1.5px solid rgba(255,255,255,.6);backdrop-filter:blur(6px)}
+.bdx-hero .bdx-btn--ghost:hover{background:rgba(255,255,255,.18)}
+.bdx-hero .bdx-ticks{color:rgba(255,255,255,.86)}
+.bdx-hero .bdx-ticks .icon{color:var(--sx-pink)}
+.bdx-hero .bdx-report{color:var(--sx-ink);background:rgba(255,255,255,.96);box-shadow:0 40px 90px -30px rgba(4,52,70,.55)}
+.bdx-hero .bdx-float--b{background:#fff;color:var(--sx-deep)}
+.bdx-hero .bdx-soon{background:var(--sx-pink);color:var(--sx-deep)}
+.bdx-marquee{border-top:0;margin-top:-90px}
+
+/* ---------- dark sections become deep-blue panels with dots ---------- */
+.bdx-how,.bdx-res-hero{background:linear-gradient(160deg,#096A8D 0%,#0F769B 60%,#1380A8 100%)}
+.bdx-how::before,.bdx-res-hero::before{content:"";position:absolute;inset:0;background-image:var(--sx-dots);background-size:15px 15px;opacity:.28;pointer-events:none;
+  -webkit-mask-image:linear-gradient(90deg,#000,transparent 35%,transparent 65%,#000);mask-image:linear-gradient(90deg,#000,transparent 35%,transparent 65%,#000)}
+.bdx-how-glow{background:radial-gradient(40% 60% at 100% 0%,rgba(253,145,206,.35),transparent 70%),radial-gradient(45% 55% at 0% 100%,rgba(91,211,255,.35),transparent 70%)}
+.bdx-res-glow{background:radial-gradient(45% 70% at 100% 0%,rgba(253,145,206,.32),transparent 70%)}
+.bdx-cta{background:linear-gradient(160deg,#096A8D 0%,#12799E 55%,#0D86B3 100%)}
+.bdx-cta::before{content:"";position:absolute;inset:0;background-image:var(--sx-dots);background-size:15px 15px;opacity:.3;pointer-events:none}
+.bdx-cta .bdx-btn--grad,.bdx-how .bdx-btn--grad{background:linear-gradient(180deg,#F45BB2,var(--sx-pink-strong))}
+.st-streak{background:linear-gradient(160deg,#096A8D,#12799E 65%,#0D86B3)}
+.st-flame b{background:linear-gradient(90deg,#FFD3EC,#FD91CE);-webkit-background-clip:text;background-clip:text}
+.st-week i.on{background:linear-gradient(180deg,#FFB8E0,#FD91CE)}
+.st-week i.on em{color:var(--sx-deep)}
+
+/* ---------- cards: white, crisp, soft blue shadow ---------- */
+.bdx-card,.st-drill,.st-plan,.card{box-shadow:0 18px 44px -32px rgba(9,106,141,.45)}
+.bdx-card:hover,.st-drill:hover{border-color:#9DDEF5}
+.st-drill-ic,.bdx-card-ic{background:linear-gradient(135deg,var(--sx-blue),#0094CA)!important;color:#fff}
+.qf-n{background:var(--sx-blue)}
+.qf-pill input:checked+span{background:var(--sx-deep);border-color:var(--sx-deep)}
+
+/* ---------- exam pages ---------- */
+.exam-top{background:linear-gradient(90deg,#096A8D,#12799E)!important;color:#fff}
+.exam-top .brand,.exam-top .brand span{color:#fff}
+.exam-top .timer{background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.25)!important;color:#fff!important}
+.exam-tabs button.active,.exam-tabs button[aria-pressed=true]{color:var(--sx-blue)}
+.question-nav button.answered{background:var(--sx-blue);border-color:var(--sx-blue);color:#fff}
+
+@media (max-width:760px){
+  .bdx-hero{padding:44px 18px 96px}
+  .bdx-hero::before{-webkit-mask-image:linear-gradient(180deg,#000,transparent 30%);mask-image:linear-gradient(180deg,#000,transparent 30%)}
+}
+@media (prefers-reduced-motion:reduce){.bdx-hero .bdx-grad-text{animation:none}}
