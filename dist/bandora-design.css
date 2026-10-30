@@ -288,11 +288,11 @@ html,body{overflow-x:clip}
 .bdx-audio-progress.seekable::before{content:"";position:absolute;inset:-10px 0}
 .bdx-audio-progress.seekable:hover{background:#D6F0FA}
 .bdx-audio-progress.seekable.dragging i{transition:none}
-.bdx-knob{position:absolute;top:50%;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#fff;border:3px solid #127FA6;box-shadow:0 2px 8px rgba(9,106,141,.25);transition:left .4s,transform .15s;pointer-events:none}
+.bdx-knob{position:absolute;top:50%;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#fff;border:3px solid #127FA6;box-shadow:0 2px 8px rgba(9,106,141,.25);transition:left .1s linear,transform .15s;pointer-events:none}
 .bdx-audio-progress.seekable:hover .bdx-knob,.bdx-audio-progress.seekable.dragging .bdx-knob{transform:scale(1.15)}
 .bdx-audio-progress.seekable.dragging .bdx-knob{transition:transform .15s}
 .bdx-audio-progress.seekable:focus-visible{outline:2px solid #127FA6;outline-offset:6px}
-.bdx-audio-progress i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#127FA6,#F062B2);transition:width .4s}
+.bdx-audio-progress i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#127FA6,#F062B2);transition:width .1s linear}
 
 .bd-no-accounts [data-page="auth"],.bd-no-accounts [data-work="login"],.bd-no-accounts .bd-account .btn{display:none!important}
 .bdx-soon{margin-left:6px;padding:2px 7px;border-radius:999px;background:#FFEFF8;color:#A3206A;font-size:11px;font-weight:700}

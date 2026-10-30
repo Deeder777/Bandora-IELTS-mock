@@ -11,6 +11,7 @@
   // ======================= 1. LISTENING PLAYER =======================
   let pausedAt = null;     // { session, part, index }
   let nowIndex = 0, nowTotal = 0, dragging = false;
+  let smoothFrac = null, ticker = null, cps = 14; // smooth progress inside a sentence (characters per second, learned while playing)
 
   function chunksFor(session, part) {
     const d = dataFor('listening', session);
@@ -67,7 +68,7 @@
   function setProgress() {
     const bar = document.querySelector('.bdx-audio-progress i');
     if (dragging) return;
-    const pct = (nowTotal ? Math.round((nowIndex / nowTotal) * 100) : 0) + '%';
+    const pct = (smoothFrac != null ? (smoothFrac * 100).toFixed(2) : (nowTotal ? Math.round((nowIndex / nowTotal) * 100) : 0)) + '%';
     if (bar) bar.style.width = pct;
     const knob = document.querySelector('.bdx-knob'); if (knob) knob.style.left = pct;
   }
@@ -83,6 +84,26 @@
       const status = (text) => { if (current() && $('#audio-status')) $('#audio-status').textContent = text; };
       const chunks = chunksFor(session, part);
       nowTotal = chunks.length; nowIndex = resuming ? resumeIndex : 0;
+      // character offsets so progress moves with the actual amount of speech
+      const cum = []; let totalChars = 0;
+      chunks.forEach((c) => { cum.push(totalChars); totalChars += c.text.length; });
+      totalChars = Math.max(1, totalChars);
+      const fracAt = (i) => (i >= chunks.length ? 1 : cum[i] / totalChars);
+      smoothFrac = fracAt(nowIndex);
+      let chunkStart = 0, boundary = 0;
+      if (ticker) clearInterval(ticker);
+      ticker = setInterval(() => {
+        if (!current() || !audioPlaying) { clearInterval(ticker); ticker = null; return; }
+        if (!chunkStart || nowIndex >= chunks.length) return;
+        const len = chunks[nowIndex].text.length;
+        const rate = session?.mode === 'exam' ? 0.92 : 0.92 * speed;
+        const timed = ((performance.now() - chunkStart) / 1000) * cps * rate / 0.92;
+        const inside = Math.min(len * 0.97, Math.max(boundary, timed));
+        smoothFrac = (cum[nowIndex] + inside) / totalChars;
+        setProgress();
+        const pct = Math.min(99, Math.floor(smoothFrac * 100));
+        status(`Playing… ${pct}%`);
+      }, 80);
       audioPlaying = true;
       if (session && !resuming) { markAudioPlayed(session, part, true); persist(); }
       status(resuming ? 'Resuming…' : 'Loading voice…');
@@ -98,7 +119,7 @@
         const speakNext = () => {
           if (!current()) return;
           if (nowIndex >= chunks.length) {
-            audioPlaying = false; setProgress(); updatePauseButton();
+            audioPlaying = false; smoothFrac = 1; setProgress(); updatePauseButton();
             status(session?.mode === 'exam' ? 'Audio complete. Finish your answers; exam mode allows one play.' : 'Audio complete. You can replay it or finish your answers.');
             return;
           }
@@ -106,7 +127,13 @@
           const u = new SpeechSynthesisUtterance(c.text);
           u.lang = 'en-GB'; u.rate = session?.mode === 'exam' ? 0.92 : 0.92 * speed;
           const v = voiceFor(c.speaker || '_'); if (v) { u.voice = v; u.lang = v.lang; }
-          u.onend = () => { if (!current()) return; nowIndex++; setProgress(); speakNext(); };
+          u.onstart = () => { chunkStart = performance.now(); boundary = 0; };
+          u.onboundary = (e) => { if (typeof e.charIndex === 'number') boundary = e.charIndex; };
+          u.onend = () => {
+            if (!current()) return;
+            if (chunkStart) { const secs = (performance.now() - chunkStart) / 1000; const r = u.rate / 0.92; if (secs > 0.4) cps = Math.max(8, Math.min(24, cps * 0.6 + (c.text.length / secs / r) * 0.4)); }
+            chunkStart = 0; nowIndex++; smoothFrac = fracAt(nowIndex); setProgress(); speakNext();
+          };
           u.onerror = (e) => {
             if (!current()) return;
             if (e.error === 'interrupted' || e.error === 'canceled') return;
@@ -115,7 +142,8 @@
             status('Audio could not play. Check your device sound or try another browser (Chrome, Edge or Safari), then press Play audio again.');
             offerTranscript(session, part);
           };
-          status(`Playing… ${Math.round((nowIndex / chunks.length) * 100)}%`);
+          smoothFrac = fracAt(nowIndex);
+          status(`Playing… ${Math.floor(smoothFrac * 100)}%`);
           setProgress();
           try { speechSynthesis.speak(u); } catch (err) { u.onerror({ error: 'playback-failed' }); }
         };
@@ -143,12 +171,26 @@
     b.insertAdjacentElement('afterend', box); b.textContent = 'Hide transcript';
   });
 
+  function charFrac(index) {
+    const ch = active ? chunksFor(active, active.part || 0) : [];
+    let before = 0, total = 0;
+    ch.forEach((c, i) => { if (i < index) before += c.text.length; total += c.text.length; });
+    return total ? before / total : 0;
+  }
+  function indexForFrac(f) {
+    const ch = active ? chunksFor(active, active.part || 0) : [];
+    const total = ch.reduce((a, c) => a + c.text.length, 0) || 1;
+    let acc = 0;
+    for (let i = 0; i < ch.length; i++) { if ((acc + ch[i].text.length / 2) / total >= f) return i; acc += ch[i].text.length; }
+    return Math.max(0, ch.length - 1);
+  }
   function pauseAudio() {
     if (!active || active.mode === 'exam' || !audioPlaying) return;
     pausedAt = { session: active, part: active.part || 0, index: nowIndex };
     stopAudio();
     pausedAt.ready = true;
-    const s = $('#audio-status'); if (s) s.textContent = `Paused at ${Math.round((pausedAt.index / Math.max(1, nowTotal)) * 100)}%. Press Resume to continue.`;
+    smoothFrac = charFrac(pausedAt.index); setProgress();
+    const s = $('#audio-status'); if (s) s.textContent = `Paused at ${Math.floor(smoothFrac * 100)}%. Resume replays the current sentence.`;
     updatePauseButton();
   }
   function resumeAudio() {
@@ -179,8 +221,9 @@
     stopAudio();
     nowIndex = index;
     pausedAt = { session: active, part, index, ready: true };
+    smoothFrac = charFrac(index);
     setProgress(); updatePauseButton();
-    const s = $('#audio-status'); if (s) s.textContent = `Moved to ${Math.round((index / total) * 100)}%. Press Resume to listen from here.`;
+    const s = $('#audio-status'); if (s) s.textContent = `Moved to ${Math.floor(smoothFrac * 100)}%. Press Resume to listen from here.`;
   }
   function currentIndex() { return (pausedAt && pausedAt.session === active) ? pausedAt.index : nowIndex; }
   function cycleSpeed(btn) {
@@ -216,7 +259,7 @@
     const up = (ev) => {
       document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
       dragging = false; bar.classList.remove('dragging');
-      seekTo(Math.min(total - 1, Math.floor(frac(ev.clientX) * total)));
+      seekTo(indexForFrac(frac(ev.clientX)));
     };
     document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
   });
