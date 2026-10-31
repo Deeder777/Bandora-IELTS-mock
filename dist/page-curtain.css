@@ -1,0 +1,8 @@
+/* Bandora · page curtain */
+.pfx-curtain{position:fixed;inset:0;z-index:100;pointer-events:none;display:grid;place-items:center;color:#fff;transform:translateY(100%);
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 3px,transparent 3px 14px),radial-gradient(30% 40% at 55% 55%,rgba(216,57,149,.7),transparent 70%),linear-gradient(180deg,#0593C6,#067AA8)}
+.pfx-curtain b{font:800 44px 'Plus Jakarta Sans',sans-serif;letter-spacing:-.05em;opacity:0}
+.pfx-curtain.run{animation:pfx-wipe .9s cubic-bezier(.7,0,.2,1)}
+.pfx-curtain.run b{animation:pfx-word .9s ease}
+@keyframes pfx-wipe{0%{transform:translateY(0)}45%{transform:translateY(0)}100%{transform:translateY(-100%)}}
+@keyframes pfx-word{0%,10%{opacity:0;transform:translateY(12px)}30%,45%{opacity:1;transform:none}70%,100%{opacity:0}}
