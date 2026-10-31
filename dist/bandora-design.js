@@ -16,7 +16,7 @@
 
   const B = window.Bands;
   const ORDER = ['listening', 'reading', 'writing', 'speaking'];
-  const SAMPLE = { listening: 8, reading: 7.5, writing: 6.5, speaking: 7 };
+  const SAMPLE = { listening: 9, reading: 9, writing: 9, speaking: 9 };
   const C_RING = 2 * Math.PI * 56;
   let pathStep = 0;
 
@@ -101,7 +101,7 @@
     const sample = !realOverall;
     const bands = {};
     ORDER.forEach((t) => { bands[t] = sample ? SAMPLE[t] : (real[t] ? real[t].band : null); });
-    const ov = sample ? 7.5 : realOverall.band;
+    const ov = sample ? 9 : realOverall.band;
     const weak = sample ? { text: 'Writing — Task Response' } : weakest(real);
     const ticket = nextTicket(), next = nextSection(ticket);
     const lastWriting = saved.history.find((h) => h.type === 'writing');
@@ -135,7 +135,7 @@
       </div>
     </section>
 
-    <div class="bdx-marquee" aria-hidden="true"><div class="bdx-marquee-track">${[0, 1].map(() => `<div><span>Listening</span><i></i><span class="o">Reading</span><i></i><span class="g">Writing</span><i></i><span class="o">Speaking</span><i></i><span>Band ${esc(saved.target || '7.5')}+</span><i></i></div>`).join('')}</div></div>
+    <div class="bdx-marquee" aria-hidden="true"><div class="bdx-marquee-track">${[0, 1].map(() => `<div><span>Listening</span><i></i><span class="o">Reading</span><i></i><span class="g">Writing</span><i></i><span class="o">Speaking</span><i></i><span>Band ${esc(saved.target || '9.0')}+</span><i></i></div>`).join('')}</div></div>
 
     <section class="bdx-strip">
       <div class="bdx-reveal"><b class="bdx-count">4</b> sections<small>Listening, Reading, Writing, Speaking</small></div>
@@ -226,7 +226,7 @@
   function bandChart(type) {
     const pts = saved.history.filter((x) => x.type === type && B.sessionBand(x) != null).slice(0, 6).reverse();
     if (!pts.length) return '<p class="bdx-muted">Your band trend appears after your first full section.</p>';
-    const target = Number(saved.target) || 7.5;
+    const target = Number(saved.target) || 9;
     return `<div class="bdx-chart" role="img" aria-label="${names[type]} band by session: ${pts.map((p) => B.fmtBand(B.sessionBand(p))).join(', ')}. Target ${target}.">
       <div class="bdx-target" style="bottom:${(target / 9) * 100}%"><span>Target ${target.toFixed(1)}</span></div>
       ${pts.map((p, i) => { const b = B.sessionBand(p); return `<div class="bdx-col"><span>${B.fmtBand(b)}</span><i class="${i === pts.length - 1 ? 'last' : ''}" style="height:${(b / 9) * 100}%"></i><small>${new Date(p.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</small></div>`; }).join('')}</div>`;

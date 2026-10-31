@@ -102,7 +102,7 @@
       seen.add(item.id); return true;
     });
     const targetNumber = Number(value.target);
-    const target = Number.isFinite(targetNumber) && targetNumber >= 5 && targetNumber <= 9 && targetNumber * 2 === Math.floor(targetNumber * 2) ? targetNumber.toFixed(1) : '7.5';
+    const target = Number.isFinite(targetNumber) && targetNumber >= 5 && targetNumber <= 9 && targetNumber * 2 === Math.floor(targetNumber * 2) ? targetNumber.toFixed(1) : '9.0';
     let examDate = null;
     if (typeof value.examDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.examDate)) {
       const stamp = new Date(value.examDate + 'T00:00:00Z');
